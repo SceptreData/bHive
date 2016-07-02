@@ -8,8 +8,9 @@
  */
 
 #include <unistd.h>
+#include <pthread.h>
 
-#define MAX_JOBS 100
+#define MAX_JOBS 10000
 #define MAX_BEES 16
 
 typedef struct bHive_s bHive_t;

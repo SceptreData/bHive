@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <pthread.h>
 
 #include "bhive.h"
 
@@ -195,18 +194,19 @@ int bHive_destroy( bHive_t *hive )
     }
 
     if( r != 0 ){
-        printf("Error shutting down beeThreads!");
+        printf("Error shutting down beeThreads!\n");
         return(1);
     }
 
-    printf("Killing bHive with %d remaining jobs", hive->numJobs);
-    // Now kill our job Queue.
-    job_t *tmp = hive->head;
-    while(tmp){
-        hive->head = tmp->next;
-        free(tmp->arg);
-        free(tmp);
-        tmp = hive->head;
+    if( hive->numJobs > 0 || hive->head != NULL){
+        printf("Killing hive with %d remaining jobs.\n", hive->numJobs);
+        job_t *tmp = hive->head;
+        while(tmp){
+            hive->head = tmp->next;
+            free(tmp->arg);
+            free(tmp);
+            tmp = hive->head;
+        }
     }
 
     free(hive->workerBees);
