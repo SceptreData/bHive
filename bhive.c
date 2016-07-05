@@ -109,6 +109,50 @@ int bHive_addJob( bHive_t *hive, void (*func)(void *), void *arg)
    /* Return the number of available jobs left. */ 
     return (hive->numJobs - MAX_JOBS);
 }
+
+int bHive_forceJob(bHive_t *hive, void (*func)(void *), void *arg)
+{
+    if( hive->numJobs >= MAX_JOBS ){
+        printf("bHive Queue is currently Full.\n");
+        return 0;
+    }
+
+    job_t *j = malloc(sizeof(*j));
+    if ( j == NULL ){
+        printf("Memory Error.\n");
+        exit(1);
+    }
+
+    j->func = func;
+    j->arg = arg;
+    j->next = NULL;
+    
+    pthread_mutex_lock(&(hive->hiveLock));
+    if(hive->closing){
+        free(j);
+        printf("Error creating job, Hive in shutdown process.\n");
+        return -1;
+    }
+    if (hive->head == NULL && hive->tail == NULL){
+        hive->head = j;
+        hive->tail = j;
+    }
+    else if ( hive->head == hive->tail){
+        j->next = hive->tail;
+        hive->head = hive->tail;
+    } else {
+        j->next = hive->head;
+        hive->head = j;
+    }
+    hive->numJobs++;
+
+    // Alert the bees! There is work to be done!
+    pthread_cond_signal(&(hive->availableJobs));
+    pthread_mutex_unlock(&(hive->hiveLock));
+   
+   /* Return the number of available jobs left. */ 
+    return (hive->numJobs - MAX_JOBS);
+}
         
 
 static job_t *bHive_getJob(bHive_t *hive)
